@@ -10,6 +10,14 @@ class ParentHomeScreen extends StatefulWidget {
 class _ParentHomeScreenState extends State<ParentHomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return SafeArea(
+      child: Scaffold(
+        body: Center(
+          child: Text(
+            'Parent Home Screen',
+          ),
+        ),
+      ),
+    );
   }
 }

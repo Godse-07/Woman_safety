@@ -1,19 +1,20 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
-  static SharedPreferences? _sharedPref;
-  static const String key = 'userType';
+  static const String userTypeKey = "user_type";
 
-  static Future<void> init() async {
-    _sharedPref = await SharedPreferences.getInstance();
+  static Future<void> setUserType(String userType) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(userTypeKey, userType);
   }
 
-  static Future<bool> saveUserType(String type) async {
-    if (_sharedPref == null) {
-      await init();
-    }
-    return await _sharedPref!.setString(key, type);
+  static Future<String?> getUserType() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(userTypeKey);
   }
 
-  static Future<String>? getUserType() async =>await _sharedPref?.getString(key) ?? "";
+  static Future<void> clearUserType() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(userTypeKey);
+  }
 }
