@@ -7,6 +7,7 @@ import 'package:safe_circle/components/custom_textfield.dart';
 import 'package:safe_circle/components/primary_button.dart';
 import 'package:safe_circle/components/secondary_button.dart';
 import 'package:safe_circle/home_screen.dart';
+import 'package:safe_circle/parent/parent_bottom_page.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
 import 'package:safe_circle/parent_register.dart';
 import 'package:safe_circle/db/shared_pref.dart';
@@ -60,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const ParentHomeScreen()));
+                    builder: (context) => const ParentsBottomPage()));
           } else if (userType == 'child') {
             await SharedPref.setUserType(
                 'child'); // Save user type persistently

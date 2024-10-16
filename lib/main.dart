@@ -69,6 +69,7 @@ import 'package:safe_circle/firebase_options.dart';
 import 'package:safe_circle/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:safe_circle/login_page.dart';
+import 'package:safe_circle/parent/parent_bottom_page.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
 
 void main() async {
@@ -103,7 +104,7 @@ class MyApp extends StatelessWidget {
           if (snapshot.data == "child") {
             return BottomPage();
           } else if (snapshot.data == "parent") {
-            return ParentHomeScreen();
+            return ParentsBottomPage();
           }
           return LoginPage();
         },
