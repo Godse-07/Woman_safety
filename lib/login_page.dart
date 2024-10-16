@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:safe_circle/child/bottom_page.dart';
 import 'package:safe_circle/child_register.dart';
 import 'package:safe_circle/components/custom_textfield.dart';
 import 'package:safe_circle/components/primary_button.dart';
@@ -9,6 +10,7 @@ import 'package:safe_circle/home_screen.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
 import 'package:safe_circle/parent_register.dart';
 import 'package:safe_circle/db/shared_pref.dart';
+import 'package:safe_circle/password/forget_password.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -24,83 +26,84 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   void _onSubmit() async {
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-  _formKey.currentState!.save();
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    _formKey.currentState!.save();
 
-  setState(() {
-    isLoading = true;
-  });
+    setState(() {
+      isLoading = true;
+    });
 
-  try {
-    UserCredential userCredential = await FirebaseAuth.instance
-        .signInWithEmailAndPassword(
-            email: _formData['email']!, password: _formData['password']!);
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: _formData['email']!, password: _formData['password']!);
 
-    if (userCredential.user != null) {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .get();
+      if (userCredential.user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
 
+        setState(() {
+          isLoading = false;
+        });
+
+        if (!mounted) return;
+
+        if (userDoc.exists) {
+          final userType = userDoc.data()?['type'] as String?;
+          if (userType == 'parent') {
+            await SharedPref.setUserType(
+                'parent'); // Save user type persistently
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ParentHomeScreen()));
+          } else if (userType == 'child') {
+            await SharedPref.setUserType(
+                'child'); // Save user type persistently
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (context) => BottomPage()));
+          } else {
+            _showErrorDialog("Unknown user type");
+          }
+        } else {
+          _showErrorDialog("User document not found");
+        }
+      }
+    } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
       });
 
-      if (!mounted) return;
-
-      if (userDoc.exists) {
-        final userType = userDoc.data()?['type'] as String?;
-        if (userType == 'parent') {
-          await SharedPref.setUserType('parent'); // Save user type persistently
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const ParentHomeScreen()));
-        } else if (userType == 'child') {
-          await SharedPref.setUserType('child'); // Save user type persistently
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => HomeScreen()));
-        } else {
-          _showErrorDialog("Unknown user type");
-        }
-      } else {
-        _showErrorDialog("User document not found");
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = "No user found for that email.";
+          break;
+        case 'wrong-password':
+          errorMessage = "The password does not match the provided email.";
+          break;
+        case 'invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        case 'invalid-credential':
+          errorMessage =
+              "The provided credentials are incorrect. Please check your email and password.";
+          break;
+        default:
+          errorMessage = "An error occurred: ${e.message}";
       }
+      _showErrorDialog(errorMessage);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      _showErrorDialog("An unexpected error occurred.");
     }
-  } on FirebaseAuthException catch (e) {
-    setState(() {
-      isLoading = false;
-    });
-
-    String errorMessage;
-    switch (e.code) {
-      case 'user-not-found':
-        errorMessage = "No user found for that email.";
-        break;
-      case 'wrong-password':
-        errorMessage = "The password does not match the provided email.";
-        break;
-      case 'invalid-email':
-        errorMessage = "The email address is not valid.";
-        break;
-      case 'invalid-credential':
-        errorMessage =
-            "The provided credentials are incorrect. Please check your email and password.";
-        break;
-      default:
-        errorMessage = "An error occurred: ${e.message}";
-    }
-    _showErrorDialog(errorMessage);
-  } catch (e) {
-    setState(() {
-      isLoading = false;
-    });
-    _showErrorDialog("An unexpected error occurred.");
   }
-}
-
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -224,7 +227,10 @@ class _LoginPageState extends State<LoginPage> {
                       title: "Press here",
                       onPress: () {
                         // Implement password reset functionality
-                        print("Forget Password");
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForgetPassword()));
                       },
                     )
                   ],

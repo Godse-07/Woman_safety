@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:safe_circle/constant.dart';
 
 class ContactPage extends StatefulWidget {
   const ContactPage({Key? key}) : super(key: key);
@@ -91,7 +92,7 @@ class _ContactPageState extends State<ContactPage> {
     return SafeArea(
       child: Scaffold(
         body: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? Center(child: Progress())
             : permissionDenied
                 ? Center(
                     child: Column(
@@ -115,12 +116,14 @@ class _ContactPageState extends State<ContactPage> {
                             hintText: "Search Contacts",
                             filled: true,
                             fillColor: Colors.white,
-                            prefixIcon: Icon(Icons.search, color: Colors.pinkAccent),
+                            prefixIcon:
+                                Icon(Icons.search, color: Colors.pinkAccent),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(30.0),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+                            contentPadding:
+                                EdgeInsets.symmetric(vertical: 10.0),
                           ),
                           controller: searchController,
                         ),
@@ -145,19 +148,22 @@ class _ContactPageState extends State<ContactPage> {
                                     child: ListTile(
                                       title: Text(
                                         contact.displayName,
-                                        style:
-                                            TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
                                       ),
                                       subtitle: Text(
                                         contact.phones.isNotEmpty
                                             ? contact.phones.first.number
                                             : "No Phone",
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                       ),
                                       leading: CircleAvatar(
                                         backgroundColor: Colors.pinkAccent,
                                         child: Text(
-                                          contact.displayName.isNotEmpty ? contact.displayName[0] : '',
+                                          contact.displayName.isNotEmpty
+                                              ? contact.displayName[0]
+                                              : '',
                                           style: TextStyle(color: Colors.white),
                                         ),
                                       ),
@@ -176,7 +182,8 @@ class _ContactPageState extends State<ContactPage> {
                           : Center(
                               child: Text(
                                 "No Contacts Found",
-                                style: TextStyle(color: Colors.grey, fontSize: 18),
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 18),
                               ),
                             ),
                     ],
