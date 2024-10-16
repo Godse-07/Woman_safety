@@ -152,8 +152,10 @@
 // }
 
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:safe_circle/constant.dart';
+import 'package:safe_circle/db/shared_pref.dart';
 import 'package:safe_circle/login_page.dart';
 import 'package:safe_circle/utils/quetos.dart';
 import 'package:safe_circle/widgets/home_widgets/Emergency_card.dart';
@@ -184,22 +186,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> logout() async {
-    setState(() {
-      isLoading = true; // Show the loading indicator
-    });
+  setState(() {
+    isLoading = true;
+  });
 
-    // Simulate a network call or logout process
-    await Future.delayed(
-        Duration(seconds: 2)); // Replace with your logout logic
+  try {
+    await FirebaseAuth.instance.signOut();
+    await SharedPref.clearUserType();
+    await Future.delayed(Duration(seconds: 1));
 
-    // After logout, navigate to the LoginPage
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LoginPage(),
-      ),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginPage()),
+      (Route<dynamic> route) => false,
     );
+  } catch (e) {
+    print('Error during logout: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Logout failed. Please try again.')),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
