@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "585920310721",
+    "project_id": "woman-233fc",
+    "storage_bucket": "woman-233fc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585920310721:android:d953f6809ef58fd889d340",
+        "android_client_info": {
+          "package_name": "com.example.safe_circle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTEBK9IiAsZyh7Lgj0Tp0l6skmVvCHgbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
