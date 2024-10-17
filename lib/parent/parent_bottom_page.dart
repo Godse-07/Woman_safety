@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safe_circle/parent/first_contact.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
 import 'package:safe_circle/parent/parent_profile.dart';
 import 'package:safe_circle/parent/parents_chat.dart';
@@ -18,7 +19,7 @@ class _BottomPageState extends State<ParentsBottomPage> {
 
   final List<Widget> _pages = [
     ParentHomeScreen(),
-    ParentsContact(),
+    FirstContact(),
     ParentsChat(),
     ParentProfile(),
     ParentsReview(),
