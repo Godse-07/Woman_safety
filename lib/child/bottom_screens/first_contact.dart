@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'parents_contact.dart';
+import 'package:safe_circle/child/bottom_screens/contact_page.dart';
 
 class FirstContact extends StatefulWidget {
   const FirstContact({super.key});
@@ -11,7 +11,7 @@ class FirstContact extends StatefulWidget {
 }
 
 class _FirstContactState extends State<FirstContact> {
-   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> favoriteContacts = [];
 
@@ -117,7 +117,7 @@ class _FirstContactState extends State<FirstContact> {
           onPressed: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ParentsContact()),
+              MaterialPageRoute(builder: (context) => ContactPage()),
             );
             _loadFavoriteContacts(); // Reload favorites after returning from ParentsContact
           },

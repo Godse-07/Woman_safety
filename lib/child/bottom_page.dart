@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:safe_circle/child/bottom_screens/chat_page.dart';
 import 'package:safe_circle/child/bottom_screens/contact_page.dart';
+import 'package:safe_circle/child/bottom_screens/first_contact.dart';
 import 'package:safe_circle/child/bottom_screens/profile_page.dart';
 import 'package:safe_circle/child/bottom_screens/review_page.dart';
 import 'package:safe_circle/home_screen.dart';
@@ -18,7 +19,7 @@ class _BottomPageState extends State<BottomPage> {
 
   final List<Widget> _pages = [
     HomeScreen(),
-    ContactPage(),
+    FirstContact(),
     ChatScreen(),
     ProfilePage(),
     ReviewPage(),
@@ -27,7 +28,8 @@ class _BottomPageState extends State<BottomPage> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = 0; // Explicitly reset the index when BottomPage is initialized
+    _currentIndex =
+        0; // Explicitly reset the index when BottomPage is initialized
   }
 
   @override
@@ -45,10 +47,12 @@ class _BottomPageState extends State<BottomPage> {
         unselectedItemColor: Colors.grey, // Color for unselected icons
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.contact_page), label: "Contact"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.contact_page), label: "Contact"),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          BottomNavigationBarItem(icon: Icon(Icons.rate_review), label: "Review"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.rate_review), label: "Review"),
         ],
       ),
     );
