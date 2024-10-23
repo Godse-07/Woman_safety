@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safe_circle/child/bottom_screens/contact_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FirstContact extends StatefulWidget {
-  const FirstContact({super.key});
+  const FirstContact({Key? key}) : super(key: key);
 
   @override
   State<FirstContact> createState() => _FirstContactState();
@@ -33,7 +34,7 @@ class _FirstContactState extends State<FirstContact> {
 
       setState(() {
         favoriteContacts = querySnapshot.docs
-            .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
+            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList();
       });
     }
@@ -54,7 +55,24 @@ class _FirstContactState extends State<FirstContact> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Contact removed from favorites')),
+        const SnackBar(content: Text('Contact removed from favorites')),
+      );
+    }
+  }
+
+  Future<void> _callNumber(String number) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: number,
+    );
+    try {
+      await launchUrl(launchUri);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: Unable to make phone call. ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -64,7 +82,7 @@ class _FirstContactState extends State<FirstContact> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Center(
+          title: const Center(
             child: Text(
               'User Contact',
               style: TextStyle(
@@ -77,8 +95,8 @@ class _FirstContactState extends State<FirstContact> {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
               child: Text(
                 "Favorite Contacts",
                 style: TextStyle(
@@ -100,12 +118,24 @@ class _FirstContactState extends State<FirstContact> {
                       backgroundColor: Colors.pinkAccent,
                       child: Text(
                         contact['name'].isNotEmpty ? contact['name'][0] : '',
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.star, color: Colors.yellow),
-                      onPressed: () => _removeFromFavorites(contact['id']),
+                    trailing: SizedBox(
+                      width: 100,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            onPressed: () => _callNumber(contact['phone']),
+                            icon: const Icon(Icons.call, color: Colors.green),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.star, color: Colors.yellow),
+                            onPressed: () => _removeFromFavorites(contact['id']),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -117,11 +147,11 @@ class _FirstContactState extends State<FirstContact> {
           onPressed: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ContactPage()),
+              MaterialPageRoute(builder: (context) => const ContactPage()),
             );
-            _loadFavoriteContacts(); // Reload favorites after returning from ParentsContact
+            _loadFavoriteContacts();
           },
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
           backgroundColor: Colors.pink,
         ),
       ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:safe_circle/child/bottom_screens/chat_page.dart';
 import 'package:safe_circle/child/bottom_screens/contact_page.dart';
 import 'package:safe_circle/child/bottom_screens/first_contact.dart';
-import 'package:safe_circle/child/bottom_screens/live_location.dart';
 import 'package:safe_circle/child/bottom_screens/profile_page.dart';
 import 'package:safe_circle/child/bottom_screens/review_page.dart';
 import 'package:safe_circle/home_screen.dart';
@@ -24,7 +23,6 @@ class _BottomPageState extends State<BottomPage> {
     ChatScreen(),
     ProfilePage(),
     ReviewPage(),
-    LiveLocation(),
   ];
 
   @override
@@ -55,8 +53,6 @@ class _BottomPageState extends State<BottomPage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
           BottomNavigationBarItem(
               icon: Icon(Icons.rate_review), label: "Review"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.location_on), label: "Live Location"),
         ],
       ),
     );
