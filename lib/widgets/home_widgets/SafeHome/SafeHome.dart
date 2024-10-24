@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:telephony_sms/telephony_sms.dart';
 
 class SafeHome extends StatelessWidget {
   const SafeHome({super.key});
@@ -49,26 +50,28 @@ class SafeHome extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    // Get current location
-                    Position position = await _getCurrentLocation();
-
-                    // Get favorite contacts from Firebase
-                    List<Map<String, dynamic>> favoriteContacts = await _getFavoriteContacts();
-
-                    // Extract phone numbers from favorite contacts
-                    List<String> phoneNumbers = favoriteContacts.map((contact) => contact['phone'] as String).toList();
-
-                    // Share location with all favorite contacts at once
-                    await _shareLocation(position, phoneNumbers);
-
-                    // Show confirmation to the user
+                    // Show loading indicator
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Location shared with favorite contacts. Check your clipboard if SMS failed.')),
+                      SnackBar(
+                          content: Text('Sending location to contacts...')),
                     );
+
+                    Position position = await _getCurrentLocation();
+                    List<Map<String, dynamic>> favoriteContacts =
+                        await _getFavoriteContacts();
+                    List<String> phoneNumbers = favoriteContacts
+                        .map((contact) => contact['phone'] as String)
+                        .toList();
+
+                    await _shareLocation(
+                        position, phoneNumbers, context); // Added context here
                   } catch (e) {
-                    // Show error message to the user
+                    // Show error message
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: ${e.toString()}')),
+                      SnackBar(
+                        content: Text(e.toString()),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                 },
@@ -133,116 +136,57 @@ class SafeHome extends StatelessWidget {
     return [];
   }
 
-  // Future<void> _shareLocation(Position position, List<String> phoneNumbers) async {
-  //   String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
-  //   String message = 'Check out my current location: $googleMapsUrl';
-    
-  //   // Combine phone numbers into a single string, separated by commas
-  //   String phoneNumberList = phoneNumbers.join(',');
-
-  //   // SMS URL with multiple recipients
-  //   String smsUrl = 'sms:$phoneNumberList?body=${Uri.encodeComponent(message)}';
-    
-  //   try {
-  //     if (await canLaunch(smsUrl)) {
-  //       await launch(smsUrl);
-  //     } else {
-  //       throw 'Could not launch SMS';
-  //     }
-  //   } catch (e) {
-  //     print('Error launching SMS: $e');
-      
-  //     // Fallback: Launch the default messaging app
-  //     String fallbackUrl = 'sms:$phoneNumberList';
-  //     try {
-  //       if (await canLaunch(fallbackUrl)) {
-  //         await launch(fallbackUrl);
-  //         // If successful, copy the message to clipboard
-  //         await Clipboard.setData(ClipboardData(text: message));
-  //         print('Message copied to clipboard');
-  //       } else {
-  //         throw 'Could not launch messaging app';
-  //       }
-  //     } catch (e) {
-  //       print('Error launching messaging app: $e');
-  //       // Copy the message to clipboard if all else fails
-  //       await Clipboard.setData(ClipboardData(text: message));
-  //       print('Message copied to clipboard');
-  //       throw 'Could not send SMS. Message copied to clipboard.';
-  //     }
-  //   }
-  // }
 
 
-  Future<void> _shareLocation(Position position, List<String> phoneNumbers) async {
-  if (phoneNumbers.isEmpty) {
-    throw 'No favorite contacts found';
-  }
+  Future<void> _shareLocation(Position position, List<String> phoneNumbers,
+      BuildContext context) async {
+    if (phoneNumbers.isEmpty) {
+      throw 'No favorite contacts found';
+    }
 
-  String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
-  String message = 'Check out my current location: $googleMapsUrl';
+    final _telephonySMS = TelephonySMS();
+    await _telephonySMS.requestPermission();
 
-  for (String phoneNumber in phoneNumbers) {
-    try {
-      // Format phone number - remove any spaces and make sure it starts with proper format
-      String formattedNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
+    String googleMapsUrl =
+        'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
+    String message = 'Check out my current location: $googleMapsUrl';
+
+    int sentCount = 0; // Count of successfully sent SMS
+    int unsentCount = 0; // Count of SMS that failed to send
+
+    for (String number in phoneNumbers) {
+      String formattedNumber = number.replaceAll(RegExp(r'\s+'), '');
       if (!formattedNumber.startsWith('+')) {
-        // If number doesn't start with +, assume it's a local number and add +91 (for India)
-        formattedNumber = '+91$formattedNumber';
+        formattedNumber = '+91$formattedNumber'; // Assuming Indian numbers
       }
 
-      if (Platform.isAndroid) {
-        // Android-specific SMS URI format
-        final Uri smsUri = Uri(
-          scheme: 'smsto',
-          path: formattedNumber,
-          queryParameters: {'body': message},
-        );
+      print('Sending SMS to $formattedNumber');
 
-        final String smsUrl = smsUri.toString().replaceAll('smsto:', 'sms:');
-        
-        if (await canLaunchUrlString(smsUrl)) {
-          await launchUrlString(
-            smsUrl,
-            mode: LaunchMode.externalNonBrowserApplication,
-          );
-        } else {
-          // Fallback to intent URL for Android
-          final String intentUrl = 'intent://send/$formattedNumber#Intent;scheme=smsto;package=com.android.mms;S.sms_body=${Uri.encodeComponent(message)};end';
-          
-          if (await canLaunchUrlString(intentUrl)) {
-            await launchUrlString(
-              intentUrl,
-              mode: LaunchMode.externalNonBrowserApplication,
+      try {
+        await _telephonySMS
+            .sendSMS(
+              phone: formattedNumber,
+              message: message,
+            )
+            .timeout(
+              Duration(seconds: 20),
+              onTimeout: () => throw 'SMS timeout',
             );
-          } else {
-            print('Could not launch SMS for number: $formattedNumber');
-          }
-        }
-      } else {
-        // iOS and other platforms
-        final Uri smsUri = Uri(
-          scheme: 'sms',
-          path: formattedNumber,
-          queryParameters: {'body': message},
-        );
 
-        if (await canLaunchUrlString(smsUri.toString())) {
-          await launchUrlString(
-            smsUri.toString(),
-            mode: LaunchMode.externalApplication,
-          );
-        }
+        // If the message is sent successfully
+        sentCount++;
+        print('Message sent to $formattedNumber. Total sent: $sentCount');
+      } catch (e) {
+        // If there's an error, increment the unsent counter
+        unsentCount++;
+        print(
+            'Failed to send SMS to $formattedNumber. Total unsent: $unsentCount');
       }
-    } catch (e) {
-      print('Error sending SMS to $phoneNumber: $e');
+
+      // Optional: Delay between sending to avoid overwhelming the service
+      await Future.delayed(Duration(milliseconds: 100));
     }
   }
-
-  // Always copy to clipboard as backup
-  await Clipboard.setData(ClipboardData(text: message));
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +214,7 @@ class SafeHome extends StatelessWidget {
           ),
           margin: const EdgeInsets.all(16.0),
           padding: const EdgeInsets.all(16.0),
-          height: 200,
+          height: 210,
           child: Row(
             children: [
               Expanded(
@@ -312,6 +256,55 @@ class SafeHome extends StatelessWidget {
                   width: 150,
                   fit: BoxFit.cover,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SendingProgressOverlay extends StatelessWidget {
+  final String message;
+  final Color backgroundColor;
+
+  const SendingProgressOverlay({
+    required this.message,
+    this.backgroundColor = Colors.green,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(backgroundColor),
+              ),
+              SizedBox(height: 16),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
