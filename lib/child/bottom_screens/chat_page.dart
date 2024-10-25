@@ -14,6 +14,7 @@ class _ChildChatState extends State<ChildChat> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Stream to get all parents where the user's email matches mail
+
   Stream<QuerySnapshot> getParents() {
     final String? currentUserEmail = _auth.currentUser?.email;
 
@@ -63,7 +64,7 @@ class _ChildChatState extends State<ChildChat> {
             itemBuilder: (context, index) {
               final parent = snapshot.data!.docs[index];
               final data = parent.data() as Map<String, dynamic>;
-
+              //   print(data);
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 elevation: 4,
@@ -80,7 +81,7 @@ class _ChildChatState extends State<ChildChat> {
                           child: Icon(Icons.person),
                         ),
                   title: Text(
-                    data['gname'] ?? 'No Name',
+                    data['name'] ?? 'No Name',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -103,6 +104,8 @@ class _ChildChatState extends State<ChildChat> {
                         MaterialPageRoute(
                           builder: (context) => ChatScreen(
                             parentId: parent.id,
+                            parentName: data['name'] ?? 'No Name',
+                            parentProfile: data['profilePictureUrl'],
                           ),
                         ),
                       );
@@ -121,82 +124,41 @@ class _ChildChatState extends State<ChildChat> {
 class ChatScreen extends StatelessWidget {
   final String parentId;
 
+  final String parentName;
+  final String? parentProfile;
+
   const ChatScreen({
     super.key,
     required this.parentId,
+    required this.parentName,
+    this.parentProfile,
   });
-
-  Future<Map<String, dynamic>?> getParentData() async {
-    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-    final parentSnapshot =
-        await _firestore.collection('users').doc(parentId).get();
-
-    if (!parentSnapshot.exists) {
-      return null;
-    }
-
-    return parentSnapshot.data() as Map<String, dynamic>?;
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat with Parent'),
+        title: Row(
+          children: [
+            if (parentProfile != null)
+              CircleAvatar(
+                backgroundImage: NetworkImage(parentProfile!),
+                radius: 20,
+              )
+            else
+              const CircleAvatar(
+                child: Icon(Icons.person),
+                radius: 20,
+              ),
+            const SizedBox(width: 12),
+            Text(parentName),
+          ],
+        ),
         backgroundColor: Colors.blue,
       ),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: getParentData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError || snapshot.data == null) {
-            return const Center(
-              child: Text('Failed to load parent data.'),
-            );
-          }
-
-          final parentData = snapshot.data!;
-          final parentName = parentData['gname'] ?? 'No Name';
-          final parentEmail = parentData['gemail'] ?? 'No Email';
-          final parentNumber = parentData['number'] ?? 'No Number';
-          final parentProfile = parentData['profilePictureUrl'];
-
-          return Column(
-            children: [
-              ListTile(
-                leading: parentProfile != null
-                    ? CircleAvatar(
-                        backgroundImage: NetworkImage(parentProfile),
-                        radius: 30,
-                      )
-                    : const CircleAvatar(
-                        child: Icon(Icons.person),
-                        radius: 30,
-                      ),
-                title: Text(parentName),
-                subtitle: Text(parentEmail),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Phone: $parentNumber',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-              const Divider(),
-              const Expanded(
-                child: Center(
-                  child: Text('Chat functionality goes here'),
-                ),
-              ),
-            ],
-          );
-        },
+      body: const Center(
+        child:
+            Text('Individual chat screen - Implement chat functionality here'),
       ),
     );
   }
