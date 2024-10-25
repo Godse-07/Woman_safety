@@ -21,9 +21,9 @@ List<String> articleTitle = [
 ];
 
 List<String> imageSliders = [
-  "https://i.pinimg.com/736x/fc/e4/2b/fce42b45303dc0005387e2a4cdc2aba0.jpg",
-  "https://i.pinimg.com/736x/d4/62/02/d4620250cefa1db44e44520c8d46fabc.jpg",
-  "https://i.pinimg.com/736x/8b/25/f5/8b25f571bc5572cf876097f18eb4f2bf.jpg",
-  "https://i.pinimg.com/736x/01/9e/db/019edb76a84a6bc99a1dfbc973d0a19b.jpg",
-  "https://i.pinimg.com/736x/df/19/1d/df191d317a55cbcec2202fce5bf2a3c1.jpg",
+  "assets/one.jpg",
+  "assets/two.jpg",
+  "assets/three.jpg",
+  "assets/four.jpg",
+  "assets/five.jpg",
 ];

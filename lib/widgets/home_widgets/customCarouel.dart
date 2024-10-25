@@ -67,7 +67,7 @@ class Customcarouel extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     image: DecorationImage(
-                        image: NetworkImage(imageSliders[index]),
+                        image: Image.asset(imageSliders[index]).image,
                         fit: BoxFit.cover),
                   ),
                   child: Align(

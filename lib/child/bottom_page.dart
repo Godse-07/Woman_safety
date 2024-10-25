@@ -20,7 +20,7 @@ class _BottomPageState extends State<BottomPage> {
   final List<Widget> _pages = [
     HomeScreen(),
     FirstContact(),
-    ChatScreen(),
+    ChildChat(),
     ProfilePage(),
     ReviewPage(),
   ];

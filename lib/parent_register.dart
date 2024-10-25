@@ -16,8 +16,6 @@ class ParentLoginScreen extends StatefulWidget {
 }
 
 class _ParentLoginScreenState extends State<ParentLoginScreen> {
-
-
   bool isPasswordShown = true;
   bool isRPasswordShown = true;
   final _formKey = GlobalKey<FormState>();
@@ -45,21 +43,20 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   }
 
   Future<bool> _checkEmailExists(String email) async {
-  try {
-    var querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
 
-    return querySnapshot.docs.isNotEmpty;
-  } catch (e) {
-    print("Error checking email existence: $e");
-    _showErrorDialog("An error occurred while checking email existence.");
-    return false;
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      print("Error checking email existence: $e");
+      _showErrorDialog("An error occurred while checking email existence.");
+      return false;
+    }
   }
-}
-
 
   void _registerUser() async {
     try {
@@ -117,7 +114,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -242,12 +238,12 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                     SizedBox(height: 20),
                     CustomTextfield(
                       hintText: "Re-enter Password",
-                      isPassword: isPasswordShown,
+                      isPassword: isRPasswordShown,
                       prefix: Icon(Icons.password),
                       suffix: IconButton(
                         onPressed: () {
                           setState(() {
-                            isPasswordShown = !isPasswordShown;
+                            isRPasswordShown = !isRPasswordShown;
                           });
                         },
                         icon: Icon(
