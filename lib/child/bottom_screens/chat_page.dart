@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:safe_circle/child/bottom_screens/chatScreenChild.dart';
 
 class ChildChat extends StatefulWidget {
   const ChildChat({super.key});
@@ -13,38 +14,54 @@ class _ChildChatState extends State<ChildChat> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Stream to get all parents where the user's email matches mail
+  // Stream to get linked parents for the current child
+  Stream<List<DocumentSnapshot>> getParents() async* {
+    final String? currentUserUid = _auth.currentUser?.uid;
 
-  Stream<QuerySnapshot> getParents() {
-    final String? currentUserEmail = _auth.currentUser?.email;
-
-    if (currentUserEmail == null) {
-      return Stream.empty();
+    if (currentUserUid == null) {
+      yield [];
+      return;
     }
 
-    return _firestore
+    // Get the current child's document to find their parent's email
+    DocumentSnapshot childDoc = await _firestore
         .collection('users')
-        .where('mail', isEqualTo: currentUserEmail)
+        .doc(currentUserUid)
+        .get();
+    
+    if (!childDoc.exists) {
+      yield [];
+      return;
+    }
+
+    final childData = childDoc.data() as Map<String, dynamic>;
+    final parentEmail = childData['gemail'] as String?; // Using gemail instead of mail
+
+    if (parentEmail == null) {
+      yield [];
+      return;
+    }
+
+    // Listen to users collection for parents matching the parent's email
+    await for (QuerySnapshot parentsSnapshot in _firestore
+        .collection('users')
         .where('type', isEqualTo: 'parent')
-        .snapshots();
+        .where('gemail', isEqualTo: parentEmail) // Using gemail to match parent's email
+        .snapshots()) {
+      
+      List<DocumentSnapshot> parentDocs = parentsSnapshot.docs;
+      yield parentDocs;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_auth.currentUser == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Please log in to view your parents'),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Parents'),
         backgroundColor: Colors.blue,
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<List<DocumentSnapshot>>(
         stream: getParents(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -55,16 +72,32 @@ class _ChildChatState extends State<ChildChat> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No parents found'));
+          final parents = snapshot.data ?? [];
+
+          if (parents.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('No parents linked yet'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {}); // Trigger a rebuild to refresh data
+                    },
+                    child: const Text('Refresh'),
+                  ),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
+            itemCount: parents.length,
             itemBuilder: (context, index) {
-              final parent = snapshot.data!.docs[index];
+              final parent = parents[index];
               final data = parent.data() as Map<String, dynamic>;
-              //   print(data);
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 elevation: 4,
@@ -73,8 +106,7 @@ class _ChildChatState extends State<ChildChat> {
                   leading: data['profilePictureUrl'] != null
                       ? CircleAvatar(
                           radius: 30,
-                          backgroundImage:
-                              NetworkImage(data['profilePictureUrl']),
+                          backgroundImage: NetworkImage(data['profilePictureUrl']),
                         )
                       : const CircleAvatar(
                           radius: 30,
@@ -95,70 +127,32 @@ class _ChildChatState extends State<ChildChat> {
                       Text('Phone: ${data['number'] ?? 'No Number'}'),
                     ],
                   ),
-                  trailing: ElevatedButton.icon(
-                    icon: const Icon(Icons.chat),
-                    label: const Text('Chat'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            parentId: parent.id,
-                            parentName: data['name'] ?? 'No Name',
-                            parentProfile: data['profilePictureUrl'],
-                          ),
-                        ),
-                      );
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.chat),
+                        label: const Text('Chat'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreenChild(
+                                parentId: parent.id,
+                                parentName: data['name'] ?? 'No Name',
+                                parentProfile: data['profilePictureUrl'],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class ChatScreen extends StatelessWidget {
-  final String parentId;
-
-  final String parentName;
-  final String? parentProfile;
-
-  const ChatScreen({
-    super.key,
-    required this.parentId,
-    required this.parentName,
-    this.parentProfile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            if (parentProfile != null)
-              CircleAvatar(
-                backgroundImage: NetworkImage(parentProfile!),
-                radius: 20,
-              )
-            else
-              const CircleAvatar(
-                child: Icon(Icons.person),
-                radius: 20,
-              ),
-            const SizedBox(width: 12),
-            Text(parentName),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-      ),
-      body: const Center(
-        child:
-            Text('Individual chat screen - Implement chat functionality here'),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:safe_circle/parent/chat_page_parent.dart';
 
 class ParentsChat extends StatefulWidget {
   const ParentsChat({super.key});
@@ -104,7 +105,7 @@ class _ParentsChatState extends State<ParentsChat> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ChatScreen(
+                          builder: (context) => ChatPageParent(
                             childId: child.id,
                             childName: data['name'] ?? 'No Name',
                             childProfile: data['profilePictureUrl'],
@@ -123,44 +124,44 @@ class _ParentsChatState extends State<ParentsChat> {
   }
 }
 
-class ChatScreen extends StatelessWidget {
-  final String childId;
-  final String childName;
-  final String? childProfile;
+// class ChatScreen extends StatelessWidget {
+//   final String childId;
+//   final String childName;
+//   final String? childProfile;
 
-  const ChatScreen({
-    super.key,
-    required this.childId,
-    required this.childName,
-    this.childProfile,
-  });
+//   const ChatScreen({
+//     super.key,
+//     required this.childId,
+//     required this.childName,
+//     this.childProfile,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            if (childProfile != null)
-              CircleAvatar(
-                backgroundImage: NetworkImage(childProfile!),
-                radius: 20,
-              )
-            else
-              const CircleAvatar(
-                child: Icon(Icons.person),
-                radius: 20,
-              ),
-            const SizedBox(width: 12),
-            Text(childName),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-      ),
-      body: const Center(
-        child:
-            Text('Individual chat screen - Implement chat functionality here'),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Row(
+//           children: [
+//             if (childProfile != null)
+//               CircleAvatar(
+//                 backgroundImage: NetworkImage(childProfile!),
+//                 radius: 20,
+//               )
+//             else
+//               const CircleAvatar(
+//                 child: Icon(Icons.person),
+//                 radius: 20,
+//               ),
+//             const SizedBox(width: 12),
+//             Text(childName),
+//           ],
+//         ),
+//         backgroundColor: Colors.blue,
+//       ),
+//       body: const Center(
+//         child:
+//             Text('Individual chat screen - Implement chat functionality here'),
+//       ),
+//     );
+//   }
+// }
