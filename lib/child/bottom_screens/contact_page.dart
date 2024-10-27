@@ -13,7 +13,7 @@ class ContactPage extends StatefulWidget {
 }
 
 class _ContactPageState extends State<ContactPage> {
-   TextEditingController searchController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
   List<Contact> contacts = [];
   List<Contact> filteredContacts = [];
   bool isLoading = true;
@@ -130,7 +130,7 @@ class _ContactPageState extends State<ContactPage> {
     });
   }
 
-   @override
+  @override
   Widget build(BuildContext context) {
     bool isSearching = searchController.text.isNotEmpty;
     bool listItemExists =
@@ -139,7 +139,7 @@ class _ContactPageState extends State<ContactPage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Parents Contact'),
+          title: Text('Contact list'),
         ),
         body: isLoading
             ? Center(child: Progress())
@@ -220,14 +220,20 @@ class _ContactPageState extends State<ContactPage> {
                                       trailing: FutureBuilder<bool>(
                                         future: _isFavorite(contact.id),
                                         builder: (context, snapshot) {
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
                                             return CircularProgressIndicator();
                                           }
-                                          bool isFavorite = snapshot.data ?? false;
+                                          bool isFavorite =
+                                              snapshot.data ?? false;
                                           return IconButton(
                                             icon: Icon(
-                                              isFavorite ? Icons.star : Icons.star_border_outlined,
-                                              color: isFavorite ? Colors.yellow : Colors.pinkAccent,
+                                              isFavorite
+                                                  ? Icons.star
+                                                  : Icons.star_border_outlined,
+                                              color: isFavorite
+                                                  ? Colors.yellow
+                                                  : Colors.pinkAccent,
                                             ),
                                             onPressed: () async {
                                               await _toggleFavorite(contact);

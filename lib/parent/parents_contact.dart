@@ -140,7 +140,7 @@ class _ParentsContactState extends State<ParentsContact> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Parents Contact'),
+          title: Text('Contact list'),
         ),
         body: isLoading
             ? Center(child: Progress())

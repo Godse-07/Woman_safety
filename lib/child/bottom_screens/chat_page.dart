@@ -24,18 +24,17 @@ class _ChildChatState extends State<ChildChat> {
     }
 
     // Get the current child's document to find their parent's email
-    DocumentSnapshot childDoc = await _firestore
-        .collection('users')
-        .doc(currentUserUid)
-        .get();
-    
+    DocumentSnapshot childDoc =
+        await _firestore.collection('users').doc(currentUserUid).get();
+
     if (!childDoc.exists) {
       yield [];
       return;
     }
 
     final childData = childDoc.data() as Map<String, dynamic>;
-    final parentEmail = childData['gemail'] as String?; // Using gemail instead of mail
+    final parentEmail =
+        childData['gemail'] as String?; // Using gemail instead of mail
 
     if (parentEmail == null) {
       yield [];
@@ -46,9 +45,9 @@ class _ChildChatState extends State<ChildChat> {
     await for (QuerySnapshot parentsSnapshot in _firestore
         .collection('users')
         .where('type', isEqualTo: 'parent')
-        .where('gemail', isEqualTo: parentEmail) // Using gemail to match parent's email
+        .where('gemail',
+            isEqualTo: parentEmail) // Using gemail to match parent's email
         .snapshots()) {
-      
       List<DocumentSnapshot> parentDocs = parentsSnapshot.docs;
       yield parentDocs;
     }
@@ -58,8 +57,15 @@ class _ChildChatState extends State<ChildChat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Parents'),
-        backgroundColor: Colors.blue,
+        title: Center(
+          child: const Text(
+            'My Parents',
+            style: TextStyle(
+              color: Colors.pink,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<List<DocumentSnapshot>>(
         stream: getParents(),
@@ -106,7 +112,8 @@ class _ChildChatState extends State<ChildChat> {
                   leading: data['profilePictureUrl'] != null
                       ? CircleAvatar(
                           radius: 30,
-                          backgroundImage: NetworkImage(data['profilePictureUrl']),
+                          backgroundImage:
+                              NetworkImage(data['profilePictureUrl']),
                         )
                       : const CircleAvatar(
                           radius: 30,

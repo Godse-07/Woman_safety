@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:video_player/video_player.dart';
 
 class ChatScreenChild extends StatefulWidget {
   final String parentId;
@@ -87,6 +88,9 @@ class _ChatScreenState extends State<ChatScreenChild> {
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -127,21 +131,76 @@ class _ChatScreenState extends State<ChatScreenChild> {
     );
   }
 
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            child: Image.network(imageUrl),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+void _showFullScreenVideo(BuildContext context, String videoUrl) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: FullScreenVideoPlayer(videoUrl: videoUrl),
+        ),
+      ),
+    ),
+  );
+}
+
+  
+
   Widget _buildMessageItem(Map<String, dynamic> message) {
     final bool isCurrentUser = message['senderId'] == _auth.currentUser!.uid;
     final align = isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
-    final color = isCurrentUser ? Colors.blue[100] : Colors.grey[300];
+    final color = isCurrentUser ? Colors.blueAccent[100] : Colors.grey[300];
+    final borderRadius = isCurrentUser
+        ? BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+          )
+        : BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomRight: Radius.circular(15),
+          );
 
     Widget messageContent;
     switch (message['type']) {
       case 'image':
         messageContent = GestureDetector(
           onTap: () => _showFullScreenImage(context, message['message']),
-          child: Image.network(
-            message['message'],
-            width: 200,
-            height: 200,
-            fit: BoxFit.cover,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              message['message'],
+              width: 200,
+              height: 200,
+              fit: BoxFit.cover,
+            ),
           ),
         );
         break;
@@ -154,7 +213,10 @@ class _ChatScreenState extends State<ChatScreenChild> {
               Container(
                 width: 200,
                 height: 200,
-                color: Colors.black,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               const Icon(
                 Icons.play_circle_fill,
@@ -166,7 +228,10 @@ class _ChatScreenState extends State<ChatScreenChild> {
         );
         break;
       default:
-        messageContent = Text(message['message']);
+        messageContent = Text(
+          message['message'],
+          style: TextStyle(fontSize: 16),
+        );
     }
 
     return Container(
@@ -176,32 +241,18 @@ class _ChatScreenState extends State<ChatScreenChild> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: borderRadius,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: messageContent,
       ),
     );
-  }
-
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(),
-          body: Center(
-            child: InteractiveViewer(
-              child: Image.network(imageUrl),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFullScreenVideo(BuildContext context, String videoUrl) {
-    // Implement video player functionality here
-    // You'll need to add a video player package like video_player or chewie
   }
 
   @override
@@ -229,7 +280,7 @@ class _ChatScreenState extends State<ChatScreenChild> {
             Text(widget.parentName),
           ],
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blueAccent,
       ),
       body: Stack(
         children: [
@@ -264,45 +315,7 @@ class _ChatScreenState extends State<ChatScreenChild> {
                   },
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      offset: const Offset(0, -2),
-                      blurRadius: 4,
-                      color: Colors.black.withOpacity(0.1),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.attach_file),
-                      onPressed: _showMediaOptions,
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: 'Type a message...',
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.send),
-                      onPressed: () {
-                        if (_messageController.text.trim().isNotEmpty) {
-                          _sendMessage(_messageController.text, 'text');
-                          _messageController.clear();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              _buildMessageInput(),
             ],
           ),
           if (_isLoading)
@@ -317,9 +330,159 @@ class _ChatScreenState extends State<ChatScreenChild> {
     );
   }
 
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            offset: const Offset(0, -2),
+            blurRadius: 4,
+            color: Colors.black.withOpacity(0.1),
+          ),
+        ],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.attach_file),
+            color: Colors.blueAccent,
+            onPressed: _showMediaOptions,
+          ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: const InputDecoration(
+                hintText: 'Type a message...',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.send),
+            color: Colors.blueAccent,
+            onPressed: () {
+              if (_messageController.text.trim().isNotEmpty) {
+                _sendMessage(_messageController.text, 'text');
+                _messageController.clear();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+}
+
+
+class FullScreenVideoPlayer extends StatefulWidget {
+  final String videoUrl;
+
+  const FullScreenVideoPlayer({Key? key, required this.videoUrl})
+      : super(key: key);
+
+  @override
+  _FullScreenVideoPlayerState createState() => _FullScreenVideoPlayerState();
+}
+
+class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initializePlayer();
+  }
+
+  Future<void> initializePlayer() async {
+    try {
+      _controller = VideoPlayerController.network(widget.videoUrl);
+      await _controller.initialize();
+      setState(() {
+        _isInitialized = true;
+      });
+    } catch (e) {
+      print('Error initializing video player: $e');
+      // Show error to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading video: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (!_isInitialized)
+          const Center(child: CircularProgressIndicator())
+        else
+          AspectRatio(
+            aspectRatio: _controller.value.aspectRatio,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                VideoPlayer(_controller),
+                // Custom controls overlay
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (_controller.value.isPlaying) {
+                        _controller.pause();
+                      } else {
+                        _controller.play();
+                      }
+                    });
+                  },
+                  child: Container(
+                    color: Colors.transparent,
+                    child: Center(
+                      child: Icon(
+                        _controller.value.isPlaying
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                        size: 60.0,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ),
+                // Video progress indicator
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: VideoProgressIndicator(
+                    _controller,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.blue,
+                      bufferedColor: Colors.grey,
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 }

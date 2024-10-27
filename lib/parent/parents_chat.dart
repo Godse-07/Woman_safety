@@ -44,8 +44,14 @@ class _ParentsChatState extends State<ParentsChat> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Children'),
-        backgroundColor: Colors.blue,
+        title: Center(
+            child: const Text(
+          'My Children',
+          style: TextStyle(
+            color: Colors.pink,
+            fontWeight: FontWeight.bold,
+          ),
+        )),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: getChildren(),
@@ -123,45 +129,3 @@ class _ParentsChatState extends State<ParentsChat> {
     );
   }
 }
-
-// class ChatScreen extends StatelessWidget {
-//   final String childId;
-//   final String childName;
-//   final String? childProfile;
-
-//   const ChatScreen({
-//     super.key,
-//     required this.childId,
-//     required this.childName,
-//     this.childProfile,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Row(
-//           children: [
-//             if (childProfile != null)
-//               CircleAvatar(
-//                 backgroundImage: NetworkImage(childProfile!),
-//                 radius: 20,
-//               )
-//             else
-//               const CircleAvatar(
-//                 child: Icon(Icons.person),
-//                 radius: 20,
-//               ),
-//             const SizedBox(width: 12),
-//             Text(childName),
-//           ],
-//         ),
-//         backgroundColor: Colors.blue,
-//       ),
-//       body: const Center(
-//         child:
-//             Text('Individual chat screen - Implement chat functionality here'),
-//       ),
-//     );
-//   }
-// }
