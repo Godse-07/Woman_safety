@@ -1,12 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:video_player/video_player.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
+// Main Chat Screen Widget
 class ChatCommunity extends StatefulWidget {
   const ChatCommunity({Key? key}) : super(key: key);
 
@@ -15,19 +18,52 @@ class ChatCommunity extends StatefulWidget {
 }
 
 class _CommunityChatScreenState extends State<ChatCommunity> {
+  // Controllers and Services
   final TextEditingController _messageController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final ImagePicker _picker = ImagePicker();
+  
+  // State variables
   bool _isLoading = false;
+  String? _userName;
+  String? _userProfileUrl;
 
+  // Initialize state and load user data
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // Load user profile data from Firestore
+  Future<void> _loadUserProfile() async {
+    try {
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+      
+      if (userDoc.exists) {
+        setState(() {
+          _userName = userDoc.data()?['name'] ?? 'Anonymous';
+          _userProfileUrl = userDoc.data()?['profilePictureUrl'];
+        });
+      }
+    } catch (e) {
+      print('Error loading user profile: $e');
+    }
+  }
+
+  // Check if date should be shown in chat
   bool _shouldShowDate(DateTime? current, DateTime? previous) {
     if (current == null) return false;
     if (previous == null) return true;
     return !DateUtils.isSameDay(current, previous);
   }
 
+  // Build date header widget
   Widget _buildDateHeader(DateTime date) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -51,11 +87,13 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
     );
   }
 
+  // Format date text for header
   String _getDateText(DateTime date) {
     final now = DateTime.now();
     if (DateUtils.isSameDay(date, now)) {
       return 'Today';
-    } else if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
+    } else if (DateUtils.isSameDay(
+        date, now.subtract(const Duration(days: 1)))) {
       return 'Yesterday';
     } else if (date.year == now.year) {
       return DateFormat('MMMM d').format(date);
@@ -63,28 +101,31 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
     return DateFormat('MMMM d, y').format(date);
   }
 
+  // Format message time
   String _formatMessageTime(DateTime? time) {
     if (time == null) return '';
     return DateFormat('HH:mm').format(time);
   }
 
+  // Send message to Firestore
   Future<void> _sendMessage(String message, String type) async {
     if (message.trim().isEmpty && type == 'text') return;
 
     final String senderId = _auth.currentUser!.uid;
-    final String senderName = _auth.currentUser!.displayName ?? "Anonymous";
+    String senderName = _userName ?? 'Anonymous';
+    String? photoURL = _auth.currentUser?.photoURL ?? _userProfileUrl;
 
-    await _firestore
-        .collection('community_chats')
-        .add({
+    await _firestore.collection('community_chats').add({
       'senderId': senderId,
       'senderName': senderName,
+      'photoURL': photoURL,
       'message': message,
-      'type': type, // 'text', 'image', or 'video'
+      'type': type,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
 
+  // Pick and send media (image/video)
   Future<void> _pickAndSendMedia(ImageSource source, String type) async {
     try {
       setState(() => _isLoading = true);
@@ -100,7 +141,8 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
 
       final String fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${mediaFile.name}';
-      final Reference ref = _storage.ref().child('community_media').child(fileName);
+      final Reference ref =
+          _storage.ref().child('community_media').child(fileName);
 
       await ref.putFile(File(mediaFile.path));
       final String downloadUrl = await ref.getDownloadURL();
@@ -115,6 +157,7 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
     }
   }
 
+  // Show media picker options
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
@@ -161,28 +204,104 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
     );
   }
 
+  // Build individual message item
   Widget _buildMessageItem(Map<String, dynamic> message) {
     final bool isCurrentUser = message['senderId'] == _auth.currentUser!.uid;
     final align = isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
     final color = isCurrentUser ? Colors.blueAccent[100] : Colors.grey[300];
     final borderRadius = isCurrentUser
-        ? BorderRadius.only(
+        ? const BorderRadius.only(
             topLeft: Radius.circular(15),
             topRight: Radius.circular(15),
             bottomLeft: Radius.circular(15),
           )
-        : BorderRadius.only(
+        : const BorderRadius.only(
             topLeft: Radius.circular(15),
             topRight: Radius.circular(15),
             bottomRight: Radius.circular(15),
           );
 
     final timestamp = (message['timestamp'] as Timestamp?)?.toDate();
-    
-    Widget messageContent;
+    final String senderName = message['senderName'] ?? 'Anonymous';
+    final String? senderPhotoURL = message['photoURL'];
+
+    return Container(
+      alignment: align,
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: Row(
+        mainAxisAlignment:
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isCurrentUser) ...[
+            UserAvatar(
+              photoURL: senderPhotoURL,
+              name: senderName,
+              radius: 20,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment: isCurrentUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!isCurrentUser)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 4),
+                    child: Text(
+                      senderName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: borderRadius,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: _buildMessageContent(message),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatMessageTime(timestamp),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isCurrentUser) ...[
+            const SizedBox(width: 8),
+            UserAvatar(
+              photoURL: _auth.currentUser?.photoURL ?? _userProfileUrl,
+              name: _userName ?? 'Anonymous',
+              radius: 20,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Build message content based on type
+  Widget _buildMessageContent(Map<String, dynamic> message) {
     switch (message['type']) {
       case 'image':
-        messageContent = GestureDetector(
+        return GestureDetector(
           onTap: () => _showFullScreenImage(context, message['message']),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -194,9 +313,8 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
             ),
           ),
         );
-        break;
       case 'video':
-        messageContent = GestureDetector(
+        return GestureDetector(
           onTap: () => _showFullScreenVideo(context, message['message']),
           child: Stack(
             alignment: Alignment.center,
@@ -214,49 +332,42 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
             ],
           ),
         );
-        break;
       default:
-        messageContent = Text(
+        return Text(
           message['message'],
           style: TextStyle(fontSize: 16),
         );
     }
+  }
 
-    return Container(
-      alignment: align,
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: Column(
-        crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          if (!isCurrentUser) Text(message['senderName']),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: borderRadius,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: messageContent,
+  // Show full screen image
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.black,
           ),
-          const SizedBox(height: 4),
-          Text(
-            _formatMessageTime(timestamp),
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
+          body: Center(
+            child: Image.network(imageUrl),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  // Show full screen video
+  void _showFullScreenVideo(BuildContext context, String videoUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenVideoPlayer(videoUrl: videoUrl),
+      ),
+    );
+  }
+
+  // Main build method
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,18 +399,23 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
                       reverse: true,
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
-                        final messageData = messages[index].data() as Map<String, dynamic>;
-                        final currentMsgTime = (messageData['timestamp'] as Timestamp?)?.toDate();
+                        final messageData =
+                            messages[index].data() as Map<String, dynamic>;
+                        final currentMsgTime =
+                            (messageData['timestamp'] as Timestamp?)?.toDate();
 
-                                              final previousMsgTime = index < messages.length - 1
-                            ? (messages[index + 1].data() as Map<String, dynamic>)['timestamp']
+                        final previousMsgTime = index < messages.length - 1
+                            ? (messages[index + 1].data()
+                                as Map<String, dynamic>)['timestamp']
                             : null;
 
-                        bool showDateHeader = _shouldShowDate(currentMsgTime, (previousMsgTime as Timestamp?)?.toDate());
+                        bool showDateHeader = _shouldShowDate(currentMsgTime,
+                            (previousMsgTime as Timestamp?)?.toDate());
 
                         return Column(
                           children: [
-                            if (showDateHeader && currentMsgTime != null) _buildDateHeader(currentMsgTime),
+                            if (showDateHeader && currentMsgTime != null)
+                              _buildDateHeader(currentMsgTime),
                             _buildMessageItem(messageData),
                           ],
                         );
@@ -341,41 +457,19 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
       ),
     );
   }
-
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-          ),
-          body: Center(
-            child: Image.network(imageUrl),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFullScreenVideo(BuildContext context, String videoUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenVideoPlayer(videoUrl: videoUrl),
-      ),
-    );
-  }
 }
 
+// Full Screen Video Player Widget
 class FullScreenVideoPlayer extends StatefulWidget {
   final String videoUrl;
-  const FullScreenVideoPlayer({required this.videoUrl, Key? key}) : super(key: key);
+  const FullScreenVideoPlayer({required this.videoUrl, Key? key})
+      : super(key: key);
 
   @override
   State<FullScreenVideoPlayer> createState() => _FullScreenVideoPlayerState();
 }
 
+// Continuing FullScreenVideoPlayer implementation
 class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   late VideoPlayerController _controller;
 
@@ -414,3 +508,56 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   }
 }
 
+// User Avatar Widget for displaying profile pictures
+class UserAvatar extends StatelessWidget {
+  final String? photoURL;
+  final String name;
+  final double radius;
+
+  const UserAvatar({
+    Key? key,
+    this.photoURL,
+    required this.name,
+    this.radius = 20,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final String avatarText = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    if (photoURL != null && photoURL!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: photoURL!,
+        imageBuilder: (context, imageProvider) => CircleAvatar(
+          radius: radius,
+          backgroundImage: imageProvider,
+        ),
+        placeholder: (context, url) => CircleAvatar(
+          radius: radius,
+          backgroundColor: Colors.grey[300],
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+          ),
+        ),
+        errorWidget: (context, url, error) => _buildDefaultAvatar(avatarText),
+      );
+    }
+
+    return _buildDefaultAvatar(avatarText);
+  }
+
+  Widget _buildDefaultAvatar(String text) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.blue,
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: radius * 0.8,
+        ),
+      ),
+    );
+  }
+}

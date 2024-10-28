@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safe_circle/child/bottom_screens/contact_page.dart';
+import 'package:safe_circle/constant.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FirstContact extends StatefulWidget {
@@ -15,6 +16,7 @@ class _FirstContactState extends State<FirstContact> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> favoriteContacts = [];
+  bool isLoading = true; // Loading state
 
   @override
   void initState() {
@@ -25,17 +27,33 @@ class _FirstContactState extends State<FirstContact> {
   Future<void> _loadFavoriteContacts() async {
     final user = _auth.currentUser;
     if (user != null) {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorites')
-          .orderBy('timestamp', descending: true)
-          .get();
+      try {
+        final querySnapshot = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('favorites')
+            .orderBy('timestamp', descending: true)
+            .get();
 
+        setState(() {
+          favoriteContacts = querySnapshot.docs
+              .map((doc) =>
+                  {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+              .toList();
+          isLoading = false; // Update loading state
+        });
+      } catch (e) {
+        // Handle errors if necessary
+        setState(() {
+          isLoading = false; // Ensure loading is false on error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading contacts: ${e.toString()}')),
+        );
+      }
+    } else {
       setState(() {
-        favoriteContacts = querySnapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-            .toList();
+        isLoading = false; // Ensure loading is false if no user is logged in
       });
     }
   }
@@ -107,39 +125,49 @@ class _FirstContactState extends State<FirstContact> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: favoriteContacts.length,
-                itemBuilder: (context, index) {
-                  final contact = favoriteContacts[index];
-                  return ListTile(
-                    title: Text(contact['name']),
-                    subtitle: Text(contact['phone']),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.pinkAccent,
-                      child: Text(
-                        contact['name'].isNotEmpty ? contact['name'][0] : '',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    trailing: SizedBox(
-                      width: 100,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            onPressed: () => _callNumber(contact['phone']),
-                            icon: const Icon(Icons.call, color: Colors.green),
+              child: isLoading // Check if loading
+                  ? Center(
+                      child: Progress(), // Show loading indicator
+                    )
+                  : ListView.builder(
+                      itemCount: favoriteContacts.length,
+                      itemBuilder: (context, index) {
+                        final contact = favoriteContacts[index];
+                        return ListTile(
+                          title: Text(contact['name']),
+                          subtitle: Text(contact['phone']),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.pinkAccent,
+                            child: Text(
+                              contact['name'].isNotEmpty
+                                  ? contact['name'][0]
+                                  : '',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.star, color: Colors.yellow),
-                            onPressed: () => _removeFromFavorites(contact['id']),
+                          trailing: SizedBox(
+                            width: 100,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  onPressed: () =>
+                                      _callNumber(contact['phone']),
+                                  icon: const Icon(Icons.call,
+                                      color: Colors.green),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.star,
+                                      color: Colors.yellow),
+                                  onPressed: () =>
+                                      _removeFromFavorites(contact['id']),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
