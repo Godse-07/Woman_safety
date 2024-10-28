@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:safe_circle/chat_comunity.dart';
 import 'package:safe_circle/parent/first_contact.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
 import 'package:safe_circle/parent/parent_profile.dart';
 import 'package:safe_circle/parent/parents_chat.dart';
-import 'package:safe_circle/parent/parents_contact.dart';
-import 'package:safe_circle/parent/parents_review.dart';
+
 
 class ParentsBottomPage extends StatefulWidget {
   const ParentsBottomPage({super.key});
@@ -22,7 +22,7 @@ class _BottomPageState extends State<ParentsBottomPage> {
     FirstContact(),
     ParentsChat(),
     ParentProfile(),
-    ParentsReview(),
+    ChatCommunity(),
   ];
 
   @override

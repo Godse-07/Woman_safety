@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:safe_circle/chat_comunity.dart';
 import 'package:safe_circle/child/bottom_screens/chat_page.dart';
 import 'package:safe_circle/child/bottom_screens/contact_page.dart';
 import 'package:safe_circle/child/bottom_screens/first_contact.dart';
 import 'package:safe_circle/child/bottom_screens/profile_page.dart';
-import 'package:safe_circle/child/bottom_screens/review_page.dart';
 import 'package:safe_circle/home_screen.dart';
 
 class BottomPage extends StatefulWidget {
@@ -22,7 +22,7 @@ class _BottomPageState extends State<BottomPage> {
     FirstContact(),
     ChildChat(),
     ProfilePage(),
-    ReviewPage(),
+    ChatCommunity(),
   ];
 
   @override
