@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:video_player/video_player.dart';
+import 'package:intl/intl.dart';
 
 class ChatScreenChild extends StatefulWidget {
   final String parentId;
@@ -29,6 +30,52 @@ class _ChatScreenState extends State<ChatScreenChild> {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+
+  bool _shouldShowDate(DateTime? current, DateTime? previous) {
+  if (current == null) return false;
+  if (previous == null) return true;
+  return !DateUtils.isSameDay(current, previous);
+}
+
+  Widget _buildDateHeader(DateTime date) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _getDateText(date),
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getDateText(DateTime date) {
+    final now = DateTime.now();
+    if (DateUtils.isSameDay(date, now)) {
+      return 'Today';
+    } else if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
+      return 'Yesterday';
+    } else if (date.year == now.year) {
+      return DateFormat('MMMM d').format(date);
+    }
+    return DateFormat('MMMM d, y').format(date);
+  }
+
+  String _formatMessageTime(DateTime? time) {
+    if (time == null) return '';
+    return DateFormat('HH:mm').format(time);
+  }
 
   Future<void> _sendMessage(String message, String type) async {
     if (message.trim().isEmpty && type == 'text') return;
@@ -188,49 +235,90 @@ void _showFullScreenVideo(BuildContext context, String videoUrl) {
             bottomRight: Radius.circular(15),
           );
 
+    final timestamp = (message['timestamp'] as Timestamp?)?.toDate();
+    
     Widget messageContent;
     switch (message['type']) {
       case 'image':
-        messageContent = GestureDetector(
-          onTap: () => _showFullScreenImage(context, message['message']),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              message['message'],
-              width: 200,
-              height: 200,
-              fit: BoxFit.cover,
+        messageContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onTap: () => _showFullScreenImage(context, message['message']),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  message['message'],
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 4),
+            Text(
+              _formatMessageTime(timestamp),
+              style: TextStyle(
+                fontSize: 11,
+                color: isCurrentUser ? Colors.white70 : Colors.grey[600],
+              ),
+            ),
+          ],
         );
         break;
       case 'video':
-        messageContent = GestureDetector(
-          onTap: () => _showFullScreenVideo(context, message['message']),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+        messageContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onTap: () => _showFullScreenVideo(context, message['message']),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.play_circle_fill,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.play_circle_fill,
-                size: 50,
-                color: Colors.white,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _formatMessageTime(timestamp),
+              style: TextStyle(
+                fontSize: 11,
+                color: isCurrentUser ? Colors.white70 : Colors.grey[600],
               ),
-            ],
-          ),
+            ),
+          ],
         );
         break;
       default:
-        messageContent = Text(
-          message['message'],
-          style: TextStyle(fontSize: 16),
+        messageContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              message['message'],
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _formatMessageTime(timestamp),
+              style: TextStyle(
+                fontSize: 11,
+                color: isCurrentUser ? Colors.white70 : Colors.grey[600],
+              ),
+            ),
+          ],
         );
     }
 
@@ -303,15 +391,31 @@ void _showFullScreenVideo(BuildContext context, String videoUrl) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
+                    final messages = snapshot.data!.docs;
                     return ListView.builder(
-                      reverse: true,
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        final message = snapshot.data!.docs[index].data()
-                            as Map<String, dynamic>;
-                        return _buildMessageItem(message);
-                      },
-                    );
+  reverse: true,
+  itemCount: messages.length,
+  itemBuilder: (context, index) {
+    final messageData = messages[index].data() as Map<String, dynamic>;
+    final currentMsgTime = (messageData['timestamp'] as Timestamp?)?.toDate();
+    
+    final previousMessageData = index < messages.length - 1
+        ? messages[index + 1].data() as Map<String, dynamic>
+        : null;
+    final previousMsgTime = previousMessageData?['timestamp'] as Timestamp?;
+    final previousDateTime = previousMsgTime?.toDate();
+
+    final widgets = <Widget>[];
+
+    if (_shouldShowDate(currentMsgTime, previousDateTime)) {
+      widgets.add(_buildDateHeader(currentMsgTime!));
+    }
+    
+    widgets.add(_buildMessageItem(messageData));
+    
+    return Column(children: widgets);
+  },
+);
                   },
                 ),
               ),

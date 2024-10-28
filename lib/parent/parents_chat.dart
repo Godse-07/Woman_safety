@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:safe_circle/constant.dart';
 import 'package:safe_circle/parent/chat_page_parent.dart';
 
 class ParentsChat extends StatefulWidget {
@@ -57,7 +58,7 @@ class _ParentsChatState extends State<ParentsChat> {
         stream: getChildren(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: Progress());
           }
 
           if (snapshot.hasError) {
