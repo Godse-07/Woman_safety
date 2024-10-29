@@ -13,10 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+       # Java setup
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'  # You can also use 'zulu', 'adopt', or 'microsoft'
+          java-version: '17'       # Common versions: '8', '11', '17', '21'
+          cache: 'gradle'          # Optional: Caches Gradle dependencies
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x.x'
+          flutter-version: '3.24.3'
           channel: 'stable'
 
       - name: Create Firebase Options
