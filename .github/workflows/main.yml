@@ -38,15 +38,22 @@ jobs:
           cache: true # Enable Flutter cache
 
       # Check if there are any changes
+      # Check if there are any changes
       - name: Check for changes
         id: changes
         run: |
-          git diff --quiet HEAD^ HEAD
-          if [ $? -ne 0 ]; then
-            echo "has_changes=true" >> $GITHUB_ENV
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --quiet HEAD^ HEAD
+            if [ $? -ne 0 ]; then
+              echo "has_changes=true" >> $GITHUB_ENV
+            else
+              echo "has_changes=false" >> $GITHUB_ENV
+            fi
           else
-            echo "has_changes=false" >> $GITHUB_ENV
+            # No previous commit exists, treat as initial commit with changes
+            echo "has_changes=true" >> $GITHUB_ENV
           fi
+
 
       # Firebase options setup with error handling
       - name: Create Firebase Options
