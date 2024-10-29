@@ -90,13 +90,20 @@ jobs:
           artifacts: "build/app/outputs/flutter-apk/app-${{ github.ref_name }}.apk"
           body: |
             Release Date: $(date +'%Y-%m-%d')
-            
+
             ### Version ${{ github.ref_name }}
-            
+
             #### What's New
             - Initial release
             - Basic functionality implemented
             - Bug fixes and improvements
+
+            **Commit SHA:** ${{ github.sha }}
+            
+            **Downloads:**
+            - [ZIP](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/app-${{ github.ref_name }}.apk)
+            - [TAR.GZ](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/app-${{ github.ref_name }}.apk)
+
           token: ${{ secrets.TOKEN }}
           name: ${{ github.ref_name }}
           tag: ${{ github.ref_name }}
