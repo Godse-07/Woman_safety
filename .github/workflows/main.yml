@@ -80,3 +80,15 @@ jobs:
         with:
           name: app-release.apk
           path: build/app/outputs/apk/release/app-release.apk
+
+      # Push to GitHub Releases
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v1.0.${{ github.run_number }}
+          name: "Release v1.0.${{ github.run_number }}"
+          # body: "Automated release with APK artifact."
+          draft: false
+          prerelease: false
+          files: build/app/outputs/apk/release/app-release.apk
