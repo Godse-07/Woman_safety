@@ -91,41 +91,13 @@ jobs:
           max_attempts: 3
           command: flutter pub get
 
-      # Build APK with fixed version
-      - name: Build APK
-        run: |
-          VERSION_NAME="1.0.0"
-          VERSION_CODE=10000
-          flutter build apk --release --build-name=$VERSION_NAME --build-number=$VERSION_CODE
+      # Build steps
+      - run: flutter build apk --release --split-per-abi
 
-      # Rename APK
-      - name: Rename APK
-        run: |
-          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-v1.0.0.apk
-
-      # Create Release (only on tag push)
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+      # Release step
+      - name: Push to Releases
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/flutter-apk/app-v1.0.0.apk"
-          generateReleaseNotes: true
-          body: |
-            ### Version v1.0.0
-            
-            **Build Information:**
-            - Build Date: ${{ github.event.repository.updated_at }}
-            - Commit: ${{ github.sha }}
-            - Flutter Version: 3.24.3
-            
-            #### What's New
-            ${{ github.event.head_commit.message }}
-            
-            For full changelog, please see the commit history.
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Release v1.0.0
-          tag: v1.0.0
-          allowUpdates: true
-          removeArtifacts: false
-          replacesArtifacts: true
-          
+          artifacts: "build/app/outputs/apk/release/*"
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
