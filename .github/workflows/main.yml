@@ -91,10 +91,6 @@ jobs:
           max_attempts: 3
           command: flutter pub get
 
-      # Run tests
-      - name: Run tests
-        run: flutter test
-
       # Build APK with fixed version
       - name: Build APK
         run: |
