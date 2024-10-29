@@ -55,7 +55,7 @@ class _RegisterChildState extends State<RegisterChild> {
     return querySnapshot.docs.isNotEmpty;
   } catch (e) {
     print("Error checking email existence: $e");
-    _showErrorDialog("An error occurred while checking email existence.");
+    _showErrorDialog("An error occurred while checking email existence...");
     return false;
   }
 }
