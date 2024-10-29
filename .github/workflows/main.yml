@@ -8,6 +8,25 @@ on:
       - 'v*'  # Only trigger on version tags like "v1.0.106"
 
 jobs:
+
+  check_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need at least 2 commits to compare
+      
+      - name: Check for file changes
+        id: check
+        run: |
+          if git diff --quiet HEAD^ HEAD; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
     runs-on: ubuntu-latest
 
