@@ -34,7 +34,7 @@ Safe Circle is a dedicated women’s safety app designed to ensure a secure expe
 
     Engage in a community chat where users can share safety experiences, tips, and advice, fostering a supportive and informative environment.
 
-
+    other features will come soon.....
 
 
 ## Screenshots
