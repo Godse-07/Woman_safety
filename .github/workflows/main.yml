@@ -4,22 +4,21 @@ on:
   push:
     branches:
       - main
-      - master
-      - develop
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   build:
     name: Build & Release
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       # Java setup
       - name: Setup Java
@@ -75,14 +74,32 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Build a single universal APK
-      - run: flutter build apk --release
+      # Build APK
+      - name: Build APK
+        run: flutter build apk --release
 
-      # Release step for Android
-      - name: Push to Releases
-        if: startsWith(github.ref, 'refs/tags/')
+      # Rename APK with version
+      - name: Rename APK
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-${{ github.ref_name }}.apk
+
+      # Create Release
+      - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/flutter-apk/app-release.apk"
-          tag: ${{ github.ref_name }}
+          artifacts: "build/app/outputs/flutter-apk/app-${{ github.ref_name }}.apk"
+          body: |
+            Release Date: $(date +'%Y-%m-%d')
+            
+            ### Version ${{ github.ref_name }}
+            
+            #### What's New
+            - Initial release
+            - Basic functionality implemented
+            - Bug fixes and improvements
           token: ${{ secrets.TOKEN }}
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
