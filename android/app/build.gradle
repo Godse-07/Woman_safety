@@ -80,7 +80,7 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("E:/flutter-project/safe_circle/my-release-key.jks")  // Path to your keystore file
+            storeFile file("../my-release-key.jks")  // Path to your keystore file
             storePassword "pushan20042004"  // Your keystore password
             keyAlias "my-key-alias"  // Your key alias
             keyPassword "pushan20042004"  // Your key alias password (if different from keystore password)

@@ -94,8 +94,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Prepare keystore
+        run: |
+          echo "${{ secrets.KEYSTORE }}" > my-release-key.jks
+
       - name: Build universal APK
-        run: flutter build apk  # Builds a universal APK
+        run: flutter build apk --release  # Builds a universal APK
 
       - name: Package APKs into a ZIP file
         run: zip -r app_release.zip build/app/outputs/apk/release/app-release.apk
