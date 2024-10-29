@@ -218,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Forget Password?",
+                      "Forget Password...",
                       style: TextStyle(
                         fontSize: 18,
                         color: Color(0xFFD40061),
@@ -228,7 +228,6 @@ class _LoginPageState extends State<LoginPage> {
                     SecondaryButton(
                       title: "Press here",
                       onPress: () {
-                        // Implement password reset functionality
                         Navigator.push(
                             context,
                             MaterialPageRoute(
