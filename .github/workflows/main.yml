@@ -1,11 +1,9 @@
-name: "Build & Release"
+name: Build & Release
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
@@ -39,8 +37,20 @@ jobs:
           architecture: x64
           cache: true # Enable Flutter cache
 
+      # Check if there are any changes
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet HEAD^ HEAD
+          if [ $? -ne 0 ]; then
+            echo "::set-output name=has_changes::true"
+          else
+            echo "::set-output name=has_changes::false"
+          fi
+
       # Firebase options setup with error handling
       - name: Create Firebase Options
+        if: steps.changes.outputs.has_changes == 'true'
         run: |
           if [ -z "${{ vars.FIREBASE_ANDROID_API_KEY }}" ] || \
              [ -z "${{ vars.FIREBASE_ANDROID_APP_ID }}" ] || \
@@ -85,6 +95,7 @@ jobs:
 
       # Install dependencies with retry
       - name: Install dependencies
+        if: steps.changes.outputs.has_changes == 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 10
@@ -92,10 +103,13 @@ jobs:
           command: flutter pub get
 
       # Build steps
-      - run: flutter build apk --release --split-per-abi
+      - name: Build APK
+        if: steps.changes.outputs.has_changes == 'true'
+        run: flutter build apk --release --split-per-abi
 
       # Release step
       - name: Push to Releases
+        if: steps.changes.outputs.has_changes == 'true'
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/apk/release/*"
