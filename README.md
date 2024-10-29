@@ -5,7 +5,10 @@ Safe Circle is a dedicated women’s safety app designed to ensure a secure expe
 
 
 
-![Safe Circle](https://raw.githubusercontent.com/Godse-07/Woman_safety/refs/heads/main/assets/Safe_circle.jpg)
+<div align="center">
+    <img src="https://raw.githubusercontent.com/Godse-07/Woman_safety/refs/heads/main/assets/Safe_circle.jpg" alt="Safe Circle" style="border-radius: 50%; width: 200px; height: 200px;">
+</div>
+
 
 
 
@@ -36,14 +39,18 @@ Safe Circle is a dedicated women’s safety app designed to ensure a secure expe
 
 ## Screenshots
 
-1
-2
-3
-4
-5
-6
-7
-8
+<p align="center">
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/1.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/2.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/3.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/4.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/5.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/6.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/8.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+  <img src="https://github.com/Godse-07/Woman_safety/blob/main/assets/sc/9.jpg" alt="Web_Photo_Editor" width="200" height="450" style="margin: 30px;"/>
+</p>
+
+
 ## Installation
 
 
