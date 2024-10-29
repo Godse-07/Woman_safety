@@ -3,9 +3,11 @@ name: "Build & Release"
 on:
   push:
     branches:
-      - main
-    tags:
-      - 'v*'
+      - main  # or your default branch name
+    paths:
+      - '**'  # Only trigger on file changes
+    tags-ignore:
+      - 'v*'  # Ignore version tags to prevent duplicate runs
   pull_request:
     branches:
       - main
