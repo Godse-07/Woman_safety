@@ -12,7 +12,7 @@ Safe Circle is a dedicated women’s safety app designed to ensure a secure expe
 
 
 
-## Authors
+## Author
 
 - [@Godse-07](https://github.com/Godse-07)
 
@@ -66,4 +66,3 @@ To deploy this project run
   Flutter pub get
   Flutter run OR press F5
 ```
-
