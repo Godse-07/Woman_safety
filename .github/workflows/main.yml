@@ -8,7 +8,6 @@ on:
       - 'v*'  # Only trigger on version tags like "v1.0.106"
 
 jobs:
-
   check_changes:
     runs-on: ubuntu-latest
     outputs:
