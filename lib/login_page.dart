@@ -220,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       "Forget Password...",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 18.5,
                         color: Color(0xFFD40061),
                       ),
                     ),
