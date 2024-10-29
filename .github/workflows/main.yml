@@ -1,17 +1,42 @@
 name: CI
 
-on: push
+on:
+  push:
+    branches:
+      - main  # or your default branch name
+    paths:
+      - '**'  # only trigger on file changes
+    tags-ignore:
+      - 'v*'  # ignore version tags to prevent duplicate runs
 
 jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need at least 2 commits to compare
+      
+      - name: Check for file changes
+        id: check
+        run: |
+          if git diff --quiet HEAD^ HEAD; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check_changes
+    if: needs.check_changes.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
-      # Check out the code with full history
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Java setup with specific version (JDK 17)
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -19,15 +44,13 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      # Flutter setup with caching
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.3'
           channel: 'stable'
           architecture: x64
-          cache: true # Enable Flutter cache
+          cache: true
 
-      # Set up Firebase API keys securely
       - name: Configure Firebase API keys
         env:
           FIREBASE_ANDROID_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
@@ -67,7 +90,6 @@ jobs:
           }
           EOL
 
-      # Install dependencies with retry
       - name: Install dependencies
         uses: nick-fields/retry@v2
         with:
@@ -75,10 +97,8 @@ jobs:
           max_attempts: 3
           command: flutter pub get
 
-      # Build steps
       - run: flutter build apk --release --split-per-abi
 
-      # Release step
       - name: Push to Releases
         uses: ncipollo/release-action@v1
         with:
