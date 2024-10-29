@@ -6,6 +6,7 @@ import 'package:safe_circle/child_register.dart';
 import 'package:safe_circle/components/custom_textfield.dart';
 import 'package:safe_circle/components/primary_button.dart';
 import 'package:safe_circle/components/secondary_button.dart';
+import 'package:safe_circle/constant.dart';
 import 'package:safe_circle/home_screen.dart';
 import 'package:safe_circle/parent/parent_bottom_page.dart';
 import 'package:safe_circle/parent/parent_home_screen.dart';
@@ -204,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 30),
                       isLoading
-                          ? const CircularProgressIndicator()
+                          ? const Progress()
                           : PrimaryButton(
                               title: "Login",
                               onPress: _onSubmit,
