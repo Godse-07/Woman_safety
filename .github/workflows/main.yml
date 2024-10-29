@@ -28,6 +28,8 @@ jobs:
           fi
 
   build:
+    needs: check_changes
+    if: needs.check_changes.outputs.should_run == 'true'
     runs-on: ubuntu-latest
 
     steps:
