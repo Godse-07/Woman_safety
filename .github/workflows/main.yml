@@ -1,0 +1,42 @@
+name: "Build & Release"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Java setup
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'  # You can also use 'zulu', 'adopt', or 'microsoft'
+          java-version: '17'       # Common versions: '8', '11', '17', '21'
+          cache: 'gradle'          # Optional: Caches Gradle dependencies
+
+      # Flutter setup
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      # Build steps
+      - run: flutter build apk --release --split-per-abi
+
+
+      # Release step
+      - name: Push to Releases
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/apk/release/*,build/ios/iphoneos/app.ipa"
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
