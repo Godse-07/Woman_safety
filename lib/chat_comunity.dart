@@ -24,7 +24,7 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final ImagePicker _picker = ImagePicker();
-  
+
   // State variables
   bool _isLoading = false;
   String? _userName;
@@ -44,7 +44,7 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
           .collection('users')
           .doc(_auth.currentUser!.uid)
           .get();
-      
+
       if (userDoc.exists) {
         setState(() {
           _userName = userDoc.data()?['name'] ?? 'Anonymous';
@@ -372,8 +372,13 @@ class _CommunityChatScreenState extends State<ChatCommunity> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community Chat'),
-        backgroundColor: Colors.blueAccent,
+        title: Center(
+            child: const Text(
+          'Community Chat',
+          style: TextStyle(
+            color: Colors.pink,
+          ),
+        )),
       ),
       body: Stack(
         children: [
@@ -508,7 +513,133 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   }
 }
 
-// User Avatar Widget for displaying profile pictures
+// First, create a new ProfileCard widget
+class ProfileCard extends StatelessWidget {
+  final String? photoURL;
+  final String name;
+  final VoidCallback onClose;
+
+  const ProfileCard({
+    Key? key,
+    required this.photoURL,
+    required this.name,
+    required this.onClose,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Card(
+        margin: const EdgeInsets.all(0),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          width: 280,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  Column(
+                    children: [
+                      if (photoURL != null && photoURL!.isNotEmpty)
+                        CachedNetworkImage(
+                          imageUrl: photoURL!,
+                          imageBuilder: (context, imageProvider) => Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          placeholder: (context, url) => Container(
+                            width: 120,
+                            height: 120,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 120,
+                            height: 120,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.blue,
+                            ),
+                            child: Center(
+                              child: Text(
+                                name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.blue,
+                          ),
+                          child: Center(
+                            child: Text(
+                              name[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: onClose,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class UserAvatar extends StatelessWidget {
   final String? photoURL;
   final String name;
@@ -521,29 +652,29 @@ class UserAvatar extends StatelessWidget {
     this.radius = 20,
   }) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    final String avatarText = name.isNotEmpty ? name[0].toUpperCase() : '?';
+  void _showProfileCard(BuildContext context) {
+    OverlayEntry? overlayEntry;
 
-    if (photoURL != null && photoURL!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: photoURL!,
-        imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: radius,
-          backgroundImage: imageProvider,
-        ),
-        placeholder: (context, url) => CircleAvatar(
-          radius: radius,
-          backgroundColor: Colors.grey[300],
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
+    overlayEntry = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.black54,
+        child: InkWell(
+          onTap: () => overlayEntry?.remove(),
+          child: Center(
+            child: Material(
+              color: Colors.transparent,
+              child: ProfileCard(
+                photoURL: photoURL,
+                name: name,
+                onClose: () => overlayEntry?.remove(),
+              ),
+            ),
           ),
         ),
-        errorWidget: (context, url, error) => _buildDefaultAvatar(avatarText),
-      );
-    }
+      ),
+    );
 
-    return _buildDefaultAvatar(avatarText);
+    Overlay.of(context).insert(overlayEntry);
   }
 
   Widget _buildDefaultAvatar(String text) {
@@ -558,6 +689,33 @@ class UserAvatar extends StatelessWidget {
           fontSize: radius * 0.8,
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String avatarText = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    return GestureDetector(
+      onTap: () => _showProfileCard(context),
+      child: photoURL != null && photoURL!.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: photoURL!,
+              imageBuilder: (context, imageProvider) => CircleAvatar(
+                radius: radius,
+                backgroundImage: imageProvider,
+              ),
+              placeholder: (context, url) => CircleAvatar(
+                radius: radius,
+                backgroundColor: Colors.grey[300],
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                ),
+              ),
+              errorWidget: (context, url, error) =>
+                  _buildDefaultAvatar(avatarText),
+            )
+          : _buildDefaultAvatar(avatarText),
     );
   }
 }
