@@ -17,10 +17,11 @@ jobs:
         with:
           fetch-depth: 2  # Need at least 2 commits to compare
       
-      - name: Check for file changes
+      - name: Check for file changes in relevant directories
         id: check
         run: |
-          if git diff --quiet HEAD^ HEAD; then
+          # Check only specific directories like `lib/`, `android/`, etc.
+          if git diff --quiet HEAD^ HEAD -- lib/ android/ ios/ pubspec.yaml; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
