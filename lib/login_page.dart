@@ -238,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
                 SecondaryButton(
-                  title: "Create new account as a child",
+                  title: "Create new account as a Child",
                   onPress: () {
                     Navigator.push(
                         context,
