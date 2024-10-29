@@ -75,14 +75,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Build APK
-      - run: flutter build apk --release --split-per-abi
+      # Build a single universal APK
+      - run: flutter build apk --release
 
       # Release step for Android
       - name: Push to Releases
         if: startsWith(github.ref, 'refs/tags/')
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/apk/release/*"
+          artifacts: "build/app/outputs/flutter-apk/app-release.apk"
           tag: v1.0.${{ github.run_number }}
           token: ${{ secrets.TOKEN }}
