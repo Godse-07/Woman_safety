@@ -43,14 +43,14 @@ jobs:
         run: |
           git diff --quiet HEAD^ HEAD
           if [ $? -ne 0 ]; then
-            echo "::set-output name=has_changes::true"
+            echo "has_changes=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=has_changes::false"
+            echo "has_changes=false" >> $GITHUB_ENV
           fi
 
       # Firebase options setup with error handling
       - name: Create Firebase Options
-        if: steps.changes.outputs.has_changes == 'true'
+        if: env.has_changes == 'true'
         run: |
           if [ -z "${{ vars.FIREBASE_ANDROID_API_KEY }}" ] || \
              [ -z "${{ vars.FIREBASE_ANDROID_APP_ID }}" ] || \
@@ -95,7 +95,7 @@ jobs:
 
       # Install dependencies with retry
       - name: Install dependencies
-        if: steps.changes.outputs.has_changes == 'true'
+        if: env.has_changes == 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 10
@@ -104,12 +104,12 @@ jobs:
 
       # Build steps
       - name: Build APK
-        if: steps.changes.outputs.has_changes == 'true'
+        if: env.has_changes == 'true'
         run: flutter build apk --release --split-per-abi
 
       # Release step
       - name: Push to Releases
-        if: steps.changes.outputs.has_changes == 'true'
+        if: env.has_changes == 'true'
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/apk/release/*"
