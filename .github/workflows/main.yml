@@ -3,9 +3,11 @@ name: Build and Release APK
 on:
   push:
     branches:
-      - main  # or your default branch
-    tags:
-      - 'v*'  # Only trigger on version tags like "v1.0.106"
+      - main  # or your default branch name
+    paths:
+      - '**'  # Only trigger on file changes
+    tags-ignore:
+      - 'v*'  # Ignore version tags to prevent duplicate runs
 
 jobs:
   check_changes:
@@ -20,7 +22,6 @@ jobs:
       - name: Check for file changes in relevant directories
         id: check
         run: |
-          # Check only specific directories like `lib/`, `android/`, etc.
           if git diff --quiet HEAD^ HEAD -- lib/ android/ ios/ pubspec.yaml; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
@@ -31,10 +32,10 @@ jobs:
     needs: check_changes
     if: needs.check_changes.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -94,7 +95,7 @@ jobs:
         run: flutter pub get
 
       - name: Build universal APK
-        run: flutter build apk --release  # No --split-per-abi, so this builds a universal APK
+        run: flutter build apk --release  # Builds a universal APK
 
       - name: Package APKs into a ZIP file
         run: zip -r app_release.zip build/app/outputs/apk/release/app-release.apk
