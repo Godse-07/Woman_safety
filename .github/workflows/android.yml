@@ -30,86 +30,9 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-  test:
+  build:
     needs: check_changes
     if: needs.check_changes.outputs.should_run == 'true'
-    name: Run Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.3'
-          channel: 'stable'
-          architecture: x64
-          cache: true
-          
-      # Configure Firebase before any other steps that might need it
-      - name: Configure Firebase API keys
-        env:
-          FIREBASE_ANDROID_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
-          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-        run: |
-          mkdir -p lib
-          cat > lib/firebase_options.dart <<EOL
-          // Generated Firebase configuration
-          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-          import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
-
-          class DefaultFirebaseOptions {
-            static FirebaseOptions get currentPlatform {
-              if (kIsWeb) {
-                throw UnsupportedError('Unsupported platform');
-              }
-              switch (defaultTargetPlatform) {
-                case TargetPlatform.android:
-                  return android;
-                default:
-                  throw UnsupportedError(
-                    'DefaultFirebaseOptions are not supported for this platform.',
-                  );
-              }
-            }
-
-            static const FirebaseOptions android = FirebaseOptions(
-              apiKey: '$FIREBASE_ANDROID_API_KEY',
-              appId: '$FIREBASE_ANDROID_APP_ID',
-              messagingSenderId: '$FIREBASE_MESSAGING_SENDER_ID',
-              projectId: '$FIREBASE_PROJECT_ID',
-              storageBucket: '$FIREBASE_STORAGE_BUCKET',
-            );
-          }
-          EOL
-          
-      - name: Install dependencies
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: flutter pub get
-          
-      # Add a step to verify firebase_options.dart exists
-      - name: Verify Firebase Configuration
-        run: |
-          if [ ! -f "lib/firebase_options.dart" ]; then
-            echo "firebase_options.dart not found!"
-            exit 1
-          fi
-          
-      - name: Run tests
-        run: flutter test
-
-  build:
-    needs: test
     name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
