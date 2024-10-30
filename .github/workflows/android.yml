@@ -25,9 +25,9 @@ jobs:
         id: check
         run: |
           if git diff --quiet HEAD^ HEAD; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "::set-output name=changed::false"
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "::set-output name=changed::true"
           fi
 
   build:
@@ -101,7 +101,6 @@ jobs:
       - name: Build Android Release APK
         run: flutter build apk --release
 
-      # Using the downloaded service account file
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
@@ -117,4 +116,3 @@ jobs:
           artifacts: "build/app/outputs/flutter-apk/app-release.apk"
           tag: v1.0.${{ github.run_number }}
           token: ${{ secrets.TOKEN }}
-          
