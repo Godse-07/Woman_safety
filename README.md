@@ -20,6 +20,7 @@ Safe Circle is a dedicated women’s safety app designed to ensure a secure expe
 ## Download
 
 - [Download Safe Circle](https://drive.google.com/file/d/120LMHyka1yo7ESLv8bFqc0AnDgJpUbfF/view?usp=drive_link)
+- Due to some  3rd party plugins action is not working
 
 
 ## Features
