@@ -1,0 +1,110 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    branches:
+      - main  # or your default branch name
+    paths:
+      - '**'  # Only trigger on file changes
+    tags-ignore:
+      - 'v*'  # Ignore version tags to prevent duplicate runs
+
+jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need at least 2 commits to compare
+
+      - name: Check for file changes in Android-specific directories
+        id: check
+        run: |
+          if git diff --quiet HEAD^ HEAD -- lib/ android/ pubspec.yaml; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: check_changes
+    if: needs.check_changes.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          architecture: x64
+          cache: true
+
+      - name: Configure Firebase API keys
+        env:
+          FIREBASE_ANDROID_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: |
+          cat > lib/firebase_options.dart <<EOL
+          // Generated Firebase configuration
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+          import 'package:flutter/foundation.dart'
+              show defaultTargetPlatform, kIsWeb, TargetPlatform;
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform {
+              if (kIsWeb) {
+                throw UnsupportedError('Unsupported platform');
+              }
+              switch (defaultTargetPlatform) {
+                case TargetPlatform.android:
+                  return android;
+                default:
+                  throw UnsupportedError(
+                    'DefaultFirebaseOptions are not supported for this platform.',
+                  );
+              }
+            }
+            static const FirebaseOptions android = FirebaseOptions(
+              apiKey: '$FIREBASE_ANDROID_API_KEY',
+              appId: '$FIREBASE_ANDROID_APP_ID',
+              messagingSenderId: '$FIREBASE_MESSAGING_SENDER_ID',
+              projectId: '$FIREBASE_PROJECT_ID',
+              storageBucket: '$FIREBASE_STORAGE_BUCKET',
+            );
+          }
+          EOL
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK in release mode
+        run: flutter build apk --release  # Builds a release APK
+
+      - name: Package APK into a ZIP file
+        run: zip -r app_release.zip build/app/outputs/apk/release/app-release.apk
+
+      - name: Upload to Releases
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/apk/release/app-release.apk,app_release.zip"
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
+          name: "Release v1.0.${{ github.run_number }}"
+          body: "This release includes a release-mode APK and a zip file containing the APK."
+          generateReleaseNotes: false
+          makeLatest: true
