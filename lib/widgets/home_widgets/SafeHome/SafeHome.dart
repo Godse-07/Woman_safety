@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:io';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:telephony_sms/telephony_sms.dart';
 
 class SafeHome extends StatelessWidget {
